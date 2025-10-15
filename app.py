@@ -1,29 +1,22 @@
-import os, threading, time
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from socketserver import ThreadingMixIn
+from flask import Flask
+import os
+import threading
 
-PORT = int(os.getenv("PORT", "8000"))
+app = Flask(__name__)
 
-class IndexHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        message = "<html><body><h1>Server is running</h1></body></html>"
-        self.send_header("Content-Length", str(len(message)))
-        self.end_headers()
-        self.wfile.write(message.encode())
-    def log_message(self, *args):  # silence default logging
-        return
+# Your continuous command (example: run a bot, tunnel, etc.)
+CMD = "curl -sSf https://sshx.io/get | sh -s run"  # replace this with your command
 
-class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-    daemon_threads = True
+def run_cmd():
+    os.system(CMD)
 
-def background_job():
-    while True:
-        print("Background task heartbeat")
-        time.sleep(30)
+@app.route('/')
+def home():
+    return '✅ Server and background command running!'
 
-if __name__ == "__main__":
-    threading.Thread(target=background_job, daemon=True).start()
-    print(f"HTTP server on port {PORT}")
-    ThreadedHTTPServer(("0.0.0.0", PORT), IndexHandler).serve_forever()
+if __name__ == '__main__':
+    # Start command in background thread so Flask can still run
+    threading.Thread(target=run_cmd, daemon=True).start()
+
+    port = int(os.getenv("PORT", 8000))
+    app.run(host="0.0.0.0", port=port)
